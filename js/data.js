@@ -140,6 +140,16 @@ const CARS = [
     }
 ];
 
+const NEONS = [
+    { id: "none", name: "Neonsuz", price: 0, color: null },
+    { id: "blue", name: "Elektrik Mavisi", price: 1500, color: "#38bdf8" },
+    { id: "purple", name: "Siber Mor", price: 3000, color: "#c084fc" },
+    { id: "red", name: "Kan Kırmızı", price: 5000, color: "#f87171" },
+    { id: "green", name: "Kripton Yeşil", price: 7500, color: "#4ade80" },
+    { id: "gold", name: "Altın Sarısı", price: 12000, color: "#facc15" },
+    { id: "rgb", name: "RGB Gaming Akış", price: 25000, color: "rgb" }
+];
+
 const UPGRADES = [
     {
         id: "engine",

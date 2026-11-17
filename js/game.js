@@ -21,6 +21,7 @@ function saveGame() {
 }
 
 let isPlaying = false;
+let waitingForTap = false;
 let currentMap = MAPS[0];
 let cameraX = 0;
 let runDistance = 0;
@@ -67,7 +68,7 @@ function getCarStats() {
     };
 }
 
-function initRun() {
+function prepareRun() {
     const mapIdx = parseInt(document.getElementById('select-map').value);
     currentMap = MAPS[mapIdx];
     document.getElementById('map-name').innerText = currentMap.name;
@@ -76,15 +77,16 @@ function initRun() {
     maxInk = stats.finalMaxInk;
     ink = maxInk;
 
+    const startY = canvas.height * 0.65 - 25;
     car = {
         x: 150,
-        y: canvas.height * 0.5,
+        y: startY,
         vx: 0,
         vy: 0,
         width: 64,
         height: 28,
         angle: 0,
-        onGround: false
+        onGround: true
     };
 
     cameraX = 0;
@@ -103,8 +105,18 @@ function initRun() {
     });
 
     generateWorldAhead();
-    isPlaying = true;
+    isPlaying = false;
+    waitingForTap = true;
     document.getElementById('overlay-screen').classList.add('hidden');
+    document.getElementById('tap-to-start-banner').classList.remove('hidden');
+}
+
+function engageThrottle() {
+    if (waitingForTap && !isPlaying) {
+        waitingForTap = false;
+        isPlaying = true;
+        document.getElementById('tap-to-start-banner').classList.add('hidden');
+    }
 }
 
 function generateWorldAhead() {
@@ -160,6 +172,9 @@ window.addEventListener('mouseup', endDraw);
 window.addEventListener('touchend', endDraw);
 
 function startDraw(e) {
+    if (waitingForTap) {
+        engageThrottle();
+    }
     if (!isPlaying || ink <= 5) return;
     if (e.cancelable) e.preventDefault();
     isDrawing = true;
@@ -307,6 +322,8 @@ function addMoney(amount) {
 
 function gameOver() {
     isPlaying = false;
+    waitingForTap = false;
+    document.getElementById('tap-to-start-banner').classList.add('hidden');
     SoundFX.playCrash();
     saveGame();
 
@@ -315,7 +332,7 @@ function gameOver() {
     document.getElementById('run-summary').classList.remove('hidden');
     document.getElementById('summary-dist').innerText = `${runDistance} m`;
     document.getElementById('summary-earned').innerText = `+${runEarned.toLocaleString('tr-TR')} ₺`;
-    document.getElementById('btn-start').innerText = "TEKRAR DENE";
+    document.getElementById('btn-start').innerText = "YENİDEN HAZIRLA";
     document.getElementById('overlay-screen').classList.remove('hidden');
 }
 
@@ -509,7 +526,7 @@ function renderGarage() {
     });
 }
 
-document.getElementById('btn-start').onclick = initRun;
+document.getElementById('btn-start').onclick = prepareRun;
 document.getElementById('btn-garage').onclick = () => {
     isPlaying = false;
     renderGarage();
@@ -517,7 +534,9 @@ document.getElementById('btn-garage').onclick = () => {
 };
 document.getElementById('btn-close-garage').onclick = () => {
     document.getElementById('garage-modal').classList.add('hidden');
-    if (car.y <= canvas.height) {
+    if (waitingForTap) {
+        document.getElementById('tap-to-start-banner').classList.remove('hidden');
+    } else if (car.y <= canvas.height) {
         document.getElementById('overlay-screen').classList.remove('hidden');
     }
 };

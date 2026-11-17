@@ -3,10 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="screen-orientation" content="landscape">
     <title>Çiz Geç Türkiye - RGB Neon Sürüm</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <!-- Mobil Dikey Ekran Uyarısı -->
+    <div id="rotate-warning">
+        <div class="rotate-icon">📱🔄</div>
+        <h2>TELEFONU YAN ÇEVİR KANKA!</h2>
+        <p>Yolu ve uçurumları rahat görebilmek için oyunu yatay ekranda oynamalısın.</p>
+    </div>
+
     <div id="game-container">
         <canvas id="gameCanvas"></canvas>
 
@@ -33,9 +41,11 @@
                         <div id="ink-bar-fill"></div>
                     </div>
                 </div>
-                <button id="btn-sound" class="nav-btn" style="background:#374151; color:#fff;">🔊 Müzik: Açık</button>
-                <button id="btn-garage" class="nav-btn">🚗 Garaj & Mağaza</button>
+                <button id="btn-sound" class="nav-btn" style="background:#374151; color:#fff;">🔊 Müzik</button>
+                <button id="btn-garage" class="nav-btn">🚗 Garaj</button>
             </div>
+        </div>
+
         <!-- Havada Takla / Anlık Bildirim Alanı -->
         <div id="floating-popup" class="floating-popup hidden">SÜPER TAKLA! +500 ₺</div>
 
@@ -49,7 +59,7 @@
                     <p>Kazanılan Para: <strong id="summary-earned" class="text-green">+0 ₺</strong></p>
                 </div>
                 
-                <button id="btn-summary-garage" class="nav-btn hidden" style="width:100%; margin-bottom:12px; background:#f59e0b; color:#111827; padding:12px; border-radius:10px; font-weight:800; cursor:pointer;">🚗 GARAJA GİT & GELİŞTİR</button>
+                <button id="btn-summary-garage" class="nav-btn hidden" style="width:100%; margin-bottom:10px; background:#f59e0b; color:#111827; padding:10px; border-radius:10px; font-weight:800; cursor:pointer;">🚗 GARAJA GİT & GELİŞTİR</button>
 
                 <!-- Günlük Ödül Bildirim Banner -->
                 <div id="daily-reward-box" class="daily-box hidden">
@@ -95,7 +105,6 @@
                     <div id="upgrades-grid" class="items-grid"></div>
                 </div>
 
-                <!-- RGB Neon Sekmesi İçeriği -->
                 <div id="tab-neons" class="tab-content">
                     <div id="neons-grid" class="items-grid"></div>
                 </div>

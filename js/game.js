@@ -21,12 +21,10 @@ function saveGame() {
 }
 
 let isPlaying = false;
-let waitingForTap = false;
 let currentMap = MAPS[0];
 let cameraX = 0;
 let runDistance = 0;
 let runEarned = 0;
-let lastGapBonusX = 0;
 
 let car = {
     x: 150,
@@ -68,7 +66,7 @@ function getCarStats() {
     };
 }
 
-function prepareRun() {
+function initRun() {
     const mapIdx = parseInt(document.getElementById('select-map').value);
     currentMap = MAPS[mapIdx];
     document.getElementById('map-name').innerText = currentMap.name;
@@ -77,22 +75,20 @@ function prepareRun() {
     maxInk = stats.finalMaxInk;
     ink = maxInk;
 
-    const startY = canvas.height * 0.65 - 25;
     car = {
         x: 150,
-        y: startY,
+        y: canvas.height * 0.5,
         vx: 0,
         vy: 0,
         width: 64,
         height: 28,
         angle: 0,
-        onGround: true
+        onGround: false
     };
 
     cameraX = 0;
     runDistance = 0;
     runEarned = 0;
-    lastGapBonusX = 400;
     platforms = [];
     coins = [];
     drawnLines = [];
@@ -105,18 +101,10 @@ function prepareRun() {
     });
 
     generateWorldAhead();
-    isPlaying = false;
-    waitingForTap = true;
+    isPlaying = true;
     document.getElementById('overlay-screen').classList.add('hidden');
-    document.getElementById('tap-to-start-banner').classList.remove('hidden');
-}
-
-function engageThrottle() {
-    if (waitingForTap && !isPlaying) {
-        waitingForTap = false;
-        isPlaying = true;
-        document.getElementById('tap-to-start-banner').classList.add('hidden');
-    }
+    document.getElementById('run-summary').classList.add('hidden');
+    document.getElementById('btn-summary-garage').classList.add('hidden');
 }
 
 function generateWorldAhead() {
@@ -172,9 +160,6 @@ window.addEventListener('mouseup', endDraw);
 window.addEventListener('touchend', endDraw);
 
 function startDraw(e) {
-    if (waitingForTap) {
-        engageThrottle();
-    }
     if (!isPlaying || ink <= 5) return;
     if (e.cancelable) e.preventDefault();
     isDrawing = true;
@@ -322,17 +307,16 @@ function addMoney(amount) {
 
 function gameOver() {
     isPlaying = false;
-    waitingForTap = false;
-    document.getElementById('tap-to-start-banner').classList.add('hidden');
     SoundFX.playCrash();
     saveGame();
 
     document.getElementById('overlay-title').innerText = "ARABA UÇURUMA DÜŞTÜ!";
     document.getElementById('overlay-desc').innerText = "Garajdan aracını güçlendir veya daha uzun mürekkep tankı al.";
     document.getElementById('run-summary').classList.remove('hidden');
+    document.getElementById('btn-summary-garage').classList.remove('hidden');
     document.getElementById('summary-dist').innerText = `${runDistance} m`;
     document.getElementById('summary-earned').innerText = `+${runEarned.toLocaleString('tr-TR')} ₺`;
-    document.getElementById('btn-start').innerText = "YENİDEN HAZIRLA";
+    document.getElementById('btn-start').innerText = "TEKRAR DENE";
     document.getElementById('overlay-screen').classList.remove('hidden');
 }
 
@@ -526,19 +510,20 @@ function renderGarage() {
     });
 }
 
-document.getElementById('btn-start').onclick = prepareRun;
-document.getElementById('btn-garage').onclick = () => {
+document.getElementById('btn-start').onclick = initRun;
+document.getElementById('btn-garage').onclick = openGarage;
+document.getElementById('btn-summary-garage').onclick = openGarage;
+
+function openGarage() {
     isPlaying = false;
     renderGarage();
     document.getElementById('garage-modal').classList.remove('hidden');
-};
+    document.getElementById('overlay-screen').classList.add('hidden');
+}
+
 document.getElementById('btn-close-garage').onclick = () => {
     document.getElementById('garage-modal').classList.add('hidden');
-    if (waitingForTap) {
-        document.getElementById('tap-to-start-banner').classList.remove('hidden');
-    } else if (car.y <= canvas.height) {
-        document.getElementById('overlay-screen').classList.remove('hidden');
-    }
+    document.getElementById('overlay-screen').classList.remove('hidden');
 };
 
 document.querySelectorAll('.tab-btn').forEach(btn => {

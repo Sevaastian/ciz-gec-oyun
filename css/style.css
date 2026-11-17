@@ -27,6 +27,30 @@ canvas {
     cursor: crosshair;
 }
 
+#tap-to-start-banner {
+    position: absolute;
+    bottom: 36px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(17, 24, 39, 0.9);
+    border: 2px solid #fbbf24;
+    color: #fef08a;
+    padding: 12px 24px;
+    border-radius: 999px;
+    font-weight: 800;
+    font-size: 15px;
+    letter-spacing: 0.4px;
+    pointer-events: none;
+    z-index: 12;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
+    animation: pulseBanner 1.4s infinite ease-in-out;
+}
+
+@keyframes pulseBanner {
+    0%, 100% { transform: translateX(-50%) scale(1); }
+    50% { transform: translateX(-50%) scale(1.04); }
+}
+
 /* HUD */
 #hud {
     position: absolute;

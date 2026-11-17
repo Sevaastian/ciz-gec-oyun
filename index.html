@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Çiz Geç Türkiye - 2D Köprü & Araba Oyunu</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- Üst Bilgi Paneli (HUD) -->
+        <div id="hud">
+            <div class="hud-left">
+                <div class="stat-box money-box">
+                    <span class="label">Bakiye:</span>
+                    <span id="money-display">0 ₺</span>
+                </div>
+                <div class="stat-box">
+                    <span class="label">Mesafe:</span>
+                    <span id="distance-display">0 m</span>
+                </div>
+                <div class="stat-box map-badge">
+                    <span id="map-name">İstanbul Boğazı</span>
+                </div>
+            </div>
+
+            <div class="hud-right">
+                <div class="ink-container">
+                    <div class="ink-label">Mürekkep (Çizgi)</div>
+                    <div class="ink-bar-bg">
+                        <div id="ink-bar-fill"></div>
+                    </div>
+                </div>
+                <button id="btn-garage" class="nav-btn">🚗 Garaj & Yükseltme</button>
+            </div>
+        </div>
+
+        <!-- Başlangıç / Oyun Bitti Ekranı -->
+        <div id="overlay-screen" class="modal">
+            <div class="modal-content start-card">
+                <h1 id="overlay-title">ÇİZ GEÇ TÜRKİYE</h1>
+                <p id="overlay-desc">Önüne çıkan uçurumlara fare veya parmağınla çizgi çek, köprü kur ve ₺ topla!</p>
+                <div id="run-summary" class="hidden">
+                    <p>Kat Edilen Mesafe: <strong id="summary-dist">0 m</strong></p>
+                    <p>Kazanılan Para: <strong id="summary-earned" class="text-green">+0 ₺</strong></p>
+                </div>
+                <div class="map-selector">
+                    <label>Bölge Seç:</label>
+                    <select id="select-map">
+                        <option value="0">1. İstanbul Boğazı (Normal)</option>
+                        <option value="1">2. Kapadokya Vadisi (Engebeli - 1.5x ₺)</option>
+                        <option value="2">3. Karadeniz Yaylaları (Kaygan - 2.2x ₺)</option>
+                        <option value="3">4. Gece Otoyolu (Hızlı - 3.0x ₺)</option>
+                    </select>
+                </div>
+                <button id="btn-start" class="primary-btn">GAZA BAS!</button>
+            </div>
+        </div>
+
+        <!-- Garaj ve Geliştirme Mağazası -->
+        <div id="garage-modal" class="modal hidden">
+            <div class="modal-content garage-card">
+                <div class="garage-header">
+                    <h2>GARAJ & GELİŞTİRMELER</h2>
+                    <div class="garage-money">Bakiye: <span id="garage-money-display">0 ₺</span></div>
+                    <button id="btn-close-garage" class="close-btn">✕</button>
+                </div>
+
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="cars">🚗 Arabalar</button>
+                    <button class="tab-btn" data-tab="upgrades">🔧 Geliştirmeler</button>
+                </div>
+
+                <div id="tab-cars" class="tab-content active">
+                    <div id="cars-grid" class="items-grid"></div>
+                </div>
+
+                <div id="tab-upgrades" class="tab-content">
+                    <div id="upgrades-grid" class="items-grid"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/data.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>

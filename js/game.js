@@ -132,6 +132,8 @@ function initRun() {
 
     generateWorldAhead();
     isPlaying = true;
+    SoundFX.startBGM();
+
     document.getElementById('overlay-screen').classList.add('hidden');
     document.getElementById('run-summary').classList.add('hidden');
     document.getElementById('btn-summary-garage').classList.add('hidden');
@@ -374,6 +376,7 @@ function updateQuestProgress(qId, amount) {
 
 function gameOver() {
     isPlaying = false;
+    SoundFX.stopBGM();
     SoundFX.playCrash();
     saveGame();
 
@@ -452,7 +455,6 @@ function drawCar() {
     ctx.save();
     ctx.translate(car.x, car.y);
 
-    // RGB Neon Alt Taban Aydınlatması
     if (neonData.id !== 'none') {
         let neonColor = neonData.color;
         if (neonData.id === 'rgb') {
@@ -467,7 +469,7 @@ function drawCar() {
         ctx.beginPath();
         ctx.roundRect(-30, 16, 60, 6, 4);
         ctx.stroke();
-        ctx.shadowBlur = 0; // Gölgeyi sıfırla
+        ctx.shadowBlur = 0;
     }
 
     ctx.rotate(car.angle);
@@ -693,8 +695,16 @@ document.getElementById('btn-start').onclick = initRun;
 document.getElementById('btn-garage').onclick = openGarage;
 document.getElementById('btn-summary-garage').onclick = openGarage;
 
+document.getElementById('btn-sound').onclick = () => {
+    const muted = SoundFX.toggleMute();
+    const btn = document.getElementById('btn-sound');
+    btn.innerText = muted ? "🔇 Müzik: Kapalı" : "🔊 Müzik: Açık";
+    btn.style.background = muted ? "#ef4444" : "#374151";
+};
+
 function openGarage() {
     isPlaying = false;
+    SoundFX.stopBGM();
     renderGarage();
     document.getElementById('garage-modal').classList.remove('hidden');
     document.getElementById('overlay-screen').classList.add('hidden');

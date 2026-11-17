@@ -64,8 +64,6 @@ resizeCanvas();
 
 function getCarStats() {
     const baseCar = CARS.find(c => c.id === saveData.selectedCar) || CARS[0];
-    
-    // Gidilen mesafeye göre hızı kademeli artıran dinamik çarpan (Başta yavaş, gitgide hızlanır)
     const distanceBonusSpeed = Math.min(2.5, runDistance / 400); 
 
     return {
@@ -104,7 +102,7 @@ function initRun() {
     currentMap = MAPS[mapIdx];
     document.getElementById('map-name').innerText = currentMap.name;
 
-    runDistance = 0; // Mesafe sıfırlanır, hız başlangıç değerine döner
+    runDistance = 0;
     const stats = getCarStats();
     maxInk = stats.finalMaxInk;
     ink = maxInk;
@@ -112,7 +110,7 @@ function initRun() {
     car = {
         x: 150,
         y: canvas.height * 0.5,
-        vx: 2.0, // Başlangıç hızı yumuşak ve kontrollü
+        vx: 2.0,
         vy: 0,
         width: 64,
         height: 28,
@@ -178,14 +176,25 @@ function generateWorldAhead() {
     coins = coins.filter(c => !c.collected && c.x > cameraX - 300);
 }
 
+// Nokta beton bloğun içinde mi kontrolü (betonun içine çizgi gömülmesin)
+function clampPointOutOfConcrete(pt) {
+    for (let p of platforms) {
+        if (pt.x > p.x + 2 && pt.x < p.x + p.width - 2 && pt.y > p.y + 4) {
+            return { x: pt.x, y: p.y };
+        }
+    }
+    return pt;
+}
+
 function getPointerPos(e) {
     const rect = canvas.getBoundingClientRect();
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    return {
+    const rawPos = {
         x: (clientX - rect.left) + cameraX,
         y: clientY - rect.top
     };
+    return clampPointOutOfConcrete(rawPos);
 }
 
 canvas.addEventListener('mousedown', startDraw);
@@ -237,7 +246,6 @@ function update() {
     }
 
     car.vy += 0.42;
-    // Yumuşak ve kademeli hızlanma mantığı
     if (car.vx < stats.finalSpeed) {
         car.vx += 0.12;
     } else {
@@ -250,17 +258,30 @@ function update() {
     const wasOnGround = car.onGround;
     car.onGround = false;
     const wheelRadius = 11;
+    const carFrontX = car.x + 28;
+    const carBackX = car.x - 28;
+    const carBottomY = car.y + 14 + wheelRadius;
 
+    // 1. Platform (Çimen Üst Yüzey + Beton Yan Duvar) Çarpışması
     for (let p of platforms) {
+        // Önce beton yan duvara (sol kenara) önden çarpma kontrolü
+        if (carFrontX > p.x && carBackX < p.x + 15 && carBottomY > p.y + 14) {
+            car.x = p.x - 28;
+            car.vx = -1.2; // Betona toslayınca geri seker, içine girmez!
+            SoundFX.playCrash();
+            continue;
+        }
+
+        // Üstteki çimen/asfalt yüzeye iniş kontrolü
         if (car.x + 22 > p.x && car.x - 22 < p.x + p.width) {
-            const bottomY = car.y + 14 + wheelRadius;
-            if (bottomY >= p.y && bottomY <= p.y + 28 && car.vy >= 0) {
+            if (carBottomY >= p.y && carBottomY <= p.y + 28 && car.vy >= 0) {
                 car.y = p.y - 14 - wheelRadius;
                 car.vy = 0;
                 car.onGround = true;
                 car.angle *= 0.8;
             }
         }
+
         if (!p.passed && car.x > p.x + 20) {
             p.passed = true;
             const bonus = Math.round(25 * stats.finalMoneyMult);
@@ -269,6 +290,7 @@ function update() {
         }
     }
 
+    // 2. Çizilen Çizgilerle Çarpışma
     let highestSurfaceY = null;
     let slopeAngle = 0;
 
@@ -504,4 +526,233 @@ function drawCar() {
     ctx.fillRect(28, -6, 5, 6);
 
     ctx.fillStyle = "#111827";
-    ctx.strokeStyle = "#9ca3af
+    ctx.strokeStyle = "#9ca3af";
+    ctx.lineWidth = 3;
+    [-20, 20].forEach(wx => {
+        ctx.beginPath();
+        ctx.arc(wx, 14, 11, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+    });
+
+    ctx.restore();
+}
+
+function updateHUD() {
+    document.getElementById('money-display').innerText = `${Math.floor(saveData.money).toLocaleString('tr-TR')} ₺`;
+    document.getElementById('distance-display').innerText = `${runDistance} m`;
+    document.getElementById('ink-bar-fill').style.width = `${(ink / maxInk) * 100}%`;
+    document.getElementById('garage-money-display').innerText = `${Math.floor(saveData.money).toLocaleString('tr-TR')} ₺`;
+}
+
+function renderGarage() {
+    updateHUD();
+    
+    const carsGrid = document.getElementById('cars-grid');
+    carsGrid.innerHTML = '';
+    CARS.forEach(c => {
+        const owned = saveData.ownedCars.includes(c.id);
+        const equipped = saveData.selectedCar === c.id;
+        const canAfford = saveData.money >= c.price;
+
+        const card = document.createElement('div');
+        card.className = `item-card ${equipped ? 'selected' : ''}`;
+        card.innerHTML = `
+            <div>
+                <div class="item-title">${c.name}</div>
+                <div class="car-preview">
+                    <div style="width:60px;height:22px;background:${c.color};border-radius:6px;position:relative;">
+                        <div style="width:14px;height:14px;background:#111;border:2px solid #999;border-radius:50%;position:absolute;bottom:-6px;left:6px;"></div>
+                        <div style="width:14px;height:14px;background:#111;border:2px solid #999;border-radius:50%;position:absolute;bottom:-6px;right:6px;"></div>
+                    </div>
+                </div>
+                <div class="item-desc">${c.desc}</div>
+                <div class="item-stats">Hız: ${c.speed} | Gelir: ${c.moneyBonus}x ₺</div>
+            </div>
+            <button class="action-btn ${equipped ? 'btn-equipped' : (owned ? 'btn-select' : 'btn-buy')}"
+                ${!owned && !canAfford ? 'disabled' : ''}>
+                ${equipped ? 'SEÇİLİ ARAÇ' : (owned ? 'ARACI SEÇ' : `SATIN AL (${c.price.toLocaleString('tr-TR')} ₺)`)}
+            </button>
+        `;
+        card.querySelector('button').onclick = () => {
+            if (equipped) return;
+            if (owned) {
+                saveData.selectedCar = c.id;
+                SoundFX.playCoin();
+            } else if (saveData.money >= c.price) {
+                saveData.money -= c.price;
+                saveData.ownedCars.push(c.id);
+                saveData.selectedCar = c.id;
+                SoundFX.playBuy();
+            }
+            saveGame();
+            renderGarage();
+        };
+        carsGrid.appendChild(card);
+    });
+
+    const upgradesGrid = document.getElementById('upgrades-grid');
+    upgradesGrid.innerHTML = '';
+    UPGRADES.forEach(u => {
+        const lvl = saveData.upgrades[u.id] || 0;
+        const isMax = lvl >= u.maxLevel;
+        const price = Math.round(u.basePrice * Math.pow(u.priceMult, lvl));
+        const canAfford = saveData.money >= price;
+
+        const card = document.createElement('div');
+        card.className = 'item-card';
+        card.innerHTML = `
+            <div>
+                <div class="item-title">${u.name} (Sv. ${lvl}/${u.maxLevel})</div>
+                <div class="item-desc">${u.desc}</div>
+            </div>
+            <button class="action-btn btn-buy" ${isMax || !canAfford ? 'disabled' : ''}>
+                ${isMax ? 'MAKSİMUM SEVİYE' : `GELİŞTİR (${price.toLocaleString('tr-TR')} ₺)`}
+            </button>
+        `;
+        card.querySelector('button').onclick = () => {
+            if (!isMax && saveData.money >= price) {
+                saveData.money -= price;
+                saveData.upgrades[u.id] = lvl + 1;
+                SoundFX.playBuy();
+                saveGame();
+                renderGarage();
+            }
+        };
+        upgradesGrid.appendChild(card);
+    });
+
+    const neonsGrid = document.getElementById('neons-grid');
+    neonsGrid.innerHTML = '';
+    NEONS.forEach(n => {
+        const owned = saveData.ownedNeons.includes(n.id);
+        const equipped = saveData.selectedNeon === n.id;
+        const canAfford = saveData.money >= n.price;
+
+        const card = document.createElement('div');
+        card.className = `item-card ${equipped ? 'selected' : ''}`;
+        card.innerHTML = `
+            <div>
+                <div class="item-title">${n.name}</div>
+                <div class="car-preview">
+                    <div style="width:40px;height:6px;background:${n.color === 'rgb' ? 'linear-gradient(90deg, red, green, blue)' : (n.color || '#444')};box-shadow:0 0 10px ${n.color || '#000'};border-radius:4px;"></div>
+                </div>
+                <div class="item-desc">Aracın altından parlayan göz alıcı alt taban aydınlatması.</div>
+            </div>
+            <button class="action-btn ${equipped ? 'btn-equipped' : (owned ? 'btn-select' : 'btn-buy')}"
+                ${!owned && !canAfford ? 'disabled' : ''}>
+                ${equipped ? 'SEÇİLİ NEON' : (owned ? 'NEONU SEÇ' : `SATIN AL (${n.price.toLocaleString('tr-TR')} ₺)`)}
+            </button>
+        `;
+        card.querySelector('button').onclick = () => {
+            if (equipped) return;
+            if (owned) {
+                saveData.selectedNeon = n.id;
+                SoundFX.playCoin();
+            } else if (saveData.money >= n.price) {
+                saveData.money -= n.price;
+                saveData.ownedNeons.push(n.id);
+                saveData.selectedNeon = n.id;
+                SoundFX.playBuy();
+            }
+            saveGame();
+            renderGarage();
+        };
+        neonsGrid.appendChild(card);
+    });
+
+    const questsGrid = document.getElementById('quests-grid');
+    questsGrid.innerHTML = '';
+    saveData.quests.forEach(q => {
+        const card = document.createElement('div');
+        card.className = 'item-card';
+        card.innerHTML = `
+            <div>
+                <div class="item-title">${q.title}</div>
+                <div class="item-desc">${q.desc}</div>
+                <div class="item-stats">İlerleme: ${q.progress} / ${q.target}</div>
+            </div>
+            <button class="action-btn ${q.completed ? 'btn-equipped' : 'btn-select'}" disabled>
+                ${q.completed ? 'TAMAMLANDI (+ ' + q.reward.toLocaleString('tr-TR') + ' ₺)' : 'ÖDÜL: ' + q.reward.toLocaleString('tr-TR') + ' ₺'}
+            </button>
+        `;
+        questsGrid.appendChild(card);
+    });
+}
+
+document.getElementById('btn-open-gacha').onclick = () => {
+    const cost = 1500;
+    const resEl = document.getElementById('gacha-result');
+    if (saveData.money < cost) {
+        resEl.innerText = "Yeterli Türk Liran yok! Biraz daha oyna.";
+        return;
+    }
+    saveData.money -= cost;
+    SoundFX.playBuy();
+
+    const roll = Math.random();
+    if (roll < 0.5) {
+        const cashWin = 2000 + Math.floor(Math.random() * 3000);
+        saveData.money += cashWin;
+        resEl.innerText = `🎉 Şansına Büyük İkramiye Çıktı: +${cashWin.toLocaleString('tr-TR')} ₺!`;
+    } else if (roll < 0.85) {
+        const cashWin = 1000;
+        saveData.money += cashWin;
+        resEl.innerText = `🎁 Teselli İkramiyesi: +${cashWin.toLocaleString('tr-TR')} ₺ kazandın!`;
+    } else {
+        const lockedCars = CARS.filter(c => !saveData.ownedCars.includes(c.id));
+        if (lockedCars.length > 0) {
+            const luckyCar = lockedCars[Math.floor(Math.random() * lockedCars.length)];
+            saveData.ownedCars.push(luckyCar.id);
+            resEl.innerText = `🌟 MÜTHİŞ! Sandıktan Ücretsiz '${luckyCar.name}' Çıktı!`;
+        } else {
+            saveData.money += 5000;
+            resEl.innerText = `🔥 Tüm arabalar zaten sende! +5.000 ₺ nakit bonus!`;
+        }
+    }
+    saveGame();
+    renderGarage();
+};
+
+document.getElementById('btn-start').onclick = initRun;
+document.getElementById('btn-garage').onclick = openGarage;
+document.getElementById('btn-summary-garage').onclick = openGarage;
+
+document.getElementById('btn-sound').onclick = () => {
+    const muted = SoundFX.toggleMute();
+    const btn = document.getElementById('btn-sound');
+    btn.innerText = muted ? "🔇 Müzik: Kapalı" : "🔊 Müzik: Açık";
+    btn.style.background = muted ? "#ef4444" : "#374151";
+};
+
+function openGarage() {
+    isPlaying = false;
+    SoundFX.stopBGM();
+    renderGarage();
+    document.getElementById('garage-modal').classList.remove('hidden');
+    document.getElementById('overlay-screen').classList.add('hidden');
+}
+
+document.getElementById('btn-close-garage').onclick = () => {
+    document.getElementById('garage-modal').classList.add('hidden');
+    document.getElementById('overlay-screen').classList.remove('hidden');
+};
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.onclick = () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
+    };
+});
+
+function gameLoop() {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+checkDailyRewardStatus();
+updateHUD();
+gameLoop();

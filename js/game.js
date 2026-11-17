@@ -5,6 +5,8 @@ let saveData = JSON.parse(localStorage.getItem('cizGecTR_save')) || {
     money: 0,
     ownedCars: ['sahin'],
     selectedCar: 'sahin',
+    ownedNeons: ['none'],
+    selectedNeon: 'none',
     upgrades: {
         engine: 0,
         inkMax: 0,
@@ -17,8 +19,9 @@ let saveData = JSON.parse(localStorage.getItem('cizGecTR_save')) || {
     lastDailyClaim: 0
 };
 
-// Görev yapısı eksikse tamamla
 if (!saveData.quests) saveData.quests = INITIAL_QUESTS;
+if (!saveData.ownedNeons) saveData.ownedNeons = ['none'];
+if (!saveData.selectedNeon) saveData.selectedNeon = 'none';
 
 function saveGame() {
     localStorage.setItem('cizGecTR_save', JSON.stringify(saveData));
@@ -30,8 +33,6 @@ let currentMap = MAPS[0];
 let cameraX = 0;
 let runDistance = 0;
 let runEarned = 0;
-let totalGapsPassed = 0;
-let totalFlipsCount = 0;
 
 let car = {
     x: 150,
@@ -42,8 +43,7 @@ let car = {
     height: 28,
     angle: 0,
     onGround: false,
-    cumulativeRotation: 0,
-    lastAirborneAngle: 0
+    cumulativeRotation: 0
 };
 
 let platforms = [];
@@ -113,8 +113,7 @@ function initRun() {
         height: 28,
         angle: 0,
         onGround: false,
-        cumulativeRotation: 0,
-        lastAirborneAngle: 0
+        cumulativeRotation: 0
     };
 
     cameraX = 0;
@@ -245,7 +244,6 @@ function update() {
     car.onGround = false;
     const wheelRadius = 11;
 
-    // 1. Platform Çarpışması
     for (let p of platforms) {
         if (car.x + 22 > p.x && car.x - 22 < p.x + p.width) {
             const bottomY = car.y + 14 + wheelRadius;
@@ -260,12 +258,10 @@ function update() {
             p.passed = true;
             const bonus = Math.round(25 * stats.finalMoneyMult);
             addMoney(bonus);
-            totalGapsPassed++;
             updateQuestProgress('q2', 1);
         }
     }
 
-    // 2. Çizilen Çizgilerle Çarpışma
     let highestSurfaceY = null;
     let slopeAngle = 0;
 
@@ -303,11 +299,10 @@ function update() {
             car.vx += Math.sin(slopeAngle) * 0.35;
         }
     } else if (!car.onGround) {
-        car.angle += 0.035; // Havada dönme
+        car.angle += 0.035;
         car.cumulativeRotation += 0.035;
     }
 
-    // Havadan yere iniş takla kontrolü
     if (!wasOnGround && car.onGround) {
         if (Math.abs(car.cumulativeRotation) > Math.PI * 1.8) {
             const flipReward = Math.round(400 * stats.finalMoneyMult);
@@ -319,7 +314,6 @@ function update() {
         car.cumulativeRotation = 0;
     }
 
-    // 3. Para Mıknatısı
     for (let c of coins) {
         if (c.collected) continue;
         const dist = Math.hypot(car.x - c.x, car.y - c.y);
@@ -453,8 +447,29 @@ function draw() {
 
 function drawCar() {
     const carData = CARS.find(c => c.id === saveData.selectedCar) || CARS[0];
+    const neonData = NEONS.find(n => n.id === saveData.selectedNeon) || NEONS[0];
+
     ctx.save();
     ctx.translate(car.x, car.y);
+
+    // RGB Neon Alt Taban Aydınlatması
+    if (neonData.id !== 'none') {
+        let neonColor = neonData.color;
+        if (neonData.id === 'rgb') {
+            const hue = (Date.now() / 5) % 360;
+            neonColor = `hsl(${hue}, 100%, 50%)`;
+        }
+
+        ctx.shadowBlur = 22;
+        ctx.shadowColor = neonColor;
+        ctx.strokeStyle = neonColor;
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.roundRect(-30, 16, 60, 6, 4);
+        ctx.stroke();
+        ctx.shadowBlur = 0; // Gölgeyi sıfırla
+    }
+
     ctx.rotate(car.angle);
 
     ctx.fillStyle = carData.color;
@@ -580,7 +595,47 @@ function renderGarage() {
         upgradesGrid.appendChild(card);
     });
 
-    // 3. Görevler Sekmesi
+    // 3. RGB Neon Sekmesi
+    const neonsGrid = document.getElementById('neons-grid');
+    neonsGrid.innerHTML = '';
+    NEONS.forEach(n => {
+        const owned = saveData.ownedNeons.includes(n.id);
+        const equipped = saveData.selectedNeon === n.id;
+        const canAfford = saveData.money >= n.price;
+
+        const card = document.createElement('div');
+        card.className = `item-card ${equipped ? 'selected' : ''}`;
+        card.innerHTML = `
+            <div>
+                <div class="item-title">${n.name}</div>
+                <div class="car-preview">
+                    <div style="width:40px;height:6px;background:${n.color === 'rgb' ? 'linear-gradient(90deg, red, green, blue)' : (n.color || '#444')};box-shadow:0 0 10px ${n.color || '#000'};border-radius:4px;"></div>
+                </div>
+                <div class="item-desc">Aracın altından parlayan göz alıcı alt taban aydınlatması.</div>
+            </div>
+            <button class="action-btn ${equipped ? 'btn-equipped' : (owned ? 'btn-select' : 'btn-buy')}"
+                ${!owned && !canAfford ? 'disabled' : ''}>
+                ${equipped ? 'SEÇİLİ NEON' : (owned ? 'NEONU SEÇ' : `SATIN AL (${n.price.toLocaleString('tr-TR')} ₺)`)}
+            </button>
+        `;
+        card.querySelector('button').onclick = () => {
+            if (equipped) return;
+            if (owned) {
+                saveData.selectedNeon = n.id;
+                SoundFX.playCoin();
+            } else if (saveData.money >= n.price) {
+                saveData.money -= n.price;
+                saveData.ownedNeons.push(n.id);
+                saveData.selectedNeon = n.id;
+                SoundFX.playBuy();
+            }
+            saveGame();
+            renderGarage();
+        };
+        neonsGrid.appendChild(card);
+    });
+
+    // 4. Görevler Sekmesi
     const questsGrid = document.getElementById('quests-grid');
     questsGrid.innerHTML = '';
     saveData.quests.forEach(q => {
@@ -600,7 +655,6 @@ function renderGarage() {
     });
 }
 
-// Gacha (Sürpriz Kutu) Mekaniği
 document.getElementById('btn-open-gacha').onclick = () => {
     const cost = 1500;
     const resEl = document.getElementById('gacha-result');
@@ -621,7 +675,6 @@ document.getElementById('btn-open-gacha').onclick = () => {
         saveData.money += cashWin;
         resEl.innerText = `🎁 Teselli İkramiyesi: +${cashWin.toLocaleString('tr-TR')} ₺ kazandın!`;
     } else {
-        // Rastgele kilitli bir araba açma şansı
         const lockedCars = CARS.filter(c => !saveData.ownedCars.includes(c.id));
         if (lockedCars.length > 0) {
             const luckyCar = lockedCars[Math.floor(Math.random() * lockedCars.length)];

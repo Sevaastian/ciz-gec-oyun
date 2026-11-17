@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Çiz Geç Türkiye - Efsane Sürüm</title>
+    <title>Çiz Geç Türkiye - RGB Neon Sürüm</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -83,6 +83,7 @@
                 <div class="tabs">
                     <button class="tab-btn active" data-tab="cars">🚗 Arabalar</button>
                     <button class="tab-btn" data-tab="upgrades">🔧 Geliştirmeler</button>
+                    <button class="tab-btn" data-tab="neons">💡 RGB Neon</button>
                     <button class="tab-btn" data-tab="gacha">🎁 Sürpriz Kutu</button>
                     <button class="tab-btn" data-tab="quests">📜 Görevler</button>
                 </div>
@@ -95,10 +96,15 @@
                     <div id="upgrades-grid" class="items-grid"></div>
                 </div>
 
+                <!-- RGB Neon Sekmesi İçeriği -->
+                <div id="tab-neons" class="tab-content">
+                    <div id="neons-grid" class="items-grid"></div>
+                </div>
+
                 <div id="tab-gacha" class="tab-content">
                     <div class="gacha-container">
                         <h3>Sürpriz Sandık (Şans Kutusu)</h3>
-                        <p>Kutuyu açarak ankam ₺ ödülleri veya süper bonuslar kazan!</p>
+                        <p>Kutuyu açarak anlık ₺ ödülleri veya süper bonuslar kazan!</p>
                         <div class="gacha-box-art">📦</div>
                         <div id="gacha-result" class="gacha-result">Kutuyu açmak için 1.500 ₺ öde!</div>
                         <button id="btn-open-gacha" class="primary-btn" style="margin-top: 15px;">SANDIĞI AÇ (1.500 ₺)</button>

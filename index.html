@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Çiz Geç Türkiye - 2D Köprü & Araba Oyunu</title>
+    <title>Çiz Geç Türkiye - Efsane Sürüm</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -33,22 +33,30 @@
                         <div id="ink-bar-fill"></div>
                     </div>
                 </div>
-                <button id="btn-garage" class="nav-btn">🚗 Garaj & Yükseltme</button>
+                <button id="btn-garage" class="nav-btn">🚗 Garaj & Mağaza</button>
             </div>
         </div>
+
+        <!-- Havada Takla / Anlık Bildirim Alanı -->
+        <div id="floating-popup" class="floating-popup hidden">SÜPER TAKLA! +500 ₺</div>
 
         <!-- Başlangıç / Oyun Bitti Ekranı -->
         <div id="overlay-screen" class="modal">
             <div class="modal-content start-card">
                 <h1 id="overlay-title">ÇİZ GEÇ TÜRKİYE</h1>
-                <p id="overlay-desc">Önüne çıkan uçurumlara fare veya parmağınla çizgi çek, köprü kur ve ₺ topla!</p>
+                <p id="overlay-desc">Önüne çıkan uçurumlara çizgi çek, havada takla at, ₺ topla!</p>
                 <div id="run-summary" class="hidden">
                     <p>Kat Edilen Mesafe: <strong id="summary-dist">0 m</strong></p>
                     <p>Kazanılan Para: <strong id="summary-earned" class="text-green">+0 ₺</strong></p>
                 </div>
                 
-                <!-- Oyun Bitti Ekranı İçin Garaj Butonu -->
                 <button id="btn-summary-garage" class="nav-btn hidden" style="width:100%; margin-bottom:12px; background:#f59e0b; color:#111827; padding:12px; border-radius:10px; font-weight:800; cursor:pointer;">🚗 GARAJA GİT & GELİŞTİR</button>
+
+                <!-- Günlük Ödül Bildirim Banner -->
+                <div id="daily-reward-box" class="daily-box hidden">
+                    <p>🎁 Günlük Ödülün Hazır!</p>
+                    <button id="btn-claim-daily" class="secondary-btn">ÖDÜLÜ AL (+1.000 ₺)</button>
+                </div>
 
                 <div class="map-selector">
                     <label>Bölge Seç:</label>
@@ -67,7 +75,7 @@
         <div id="garage-modal" class="modal hidden">
             <div class="modal-content garage-card">
                 <div class="garage-header">
-                    <h2>GARAJ & GELİŞTİRMELER</h2>
+                    <h2>GARAJ & EFSANE PAZAR</h2>
                     <div class="garage-money">Bakiye: <span id="garage-money-display">0 ₺</span></div>
                     <button id="btn-close-garage" class="close-btn">✕</button>
                 </div>
@@ -75,6 +83,8 @@
                 <div class="tabs">
                     <button class="tab-btn active" data-tab="cars">🚗 Arabalar</button>
                     <button class="tab-btn" data-tab="upgrades">🔧 Geliştirmeler</button>
+                    <button class="tab-btn" data-tab="gacha">🎁 Sürpriz Kutu</button>
+                    <button class="tab-btn" data-tab="quests">📜 Görevler</button>
                 </div>
 
                 <div id="tab-cars" class="tab-content active">
@@ -83,6 +93,20 @@
 
                 <div id="tab-upgrades" class="tab-content">
                     <div id="upgrades-grid" class="items-grid"></div>
+                </div>
+
+                <div id="tab-gacha" class="tab-content">
+                    <div class="gacha-container">
+                        <h3>Sürpriz Sandık (Şans Kutusu)</h3>
+                        <p>Kutuyu açarak ankam ₺ ödülleri veya süper bonuslar kazan!</p>
+                        <div class="gacha-box-art">📦</div>
+                        <div id="gacha-result" class="gacha-result">Kutuyu açmak için 1.500 ₺ öde!</div>
+                        <button id="btn-open-gacha" class="primary-btn" style="margin-top: 15px;">SANDIĞI AÇ (1.500 ₺)</button>
+                    </div>
+                </div>
+
+                <div id="tab-quests" class="tab-content">
+                    <div id="quests-grid" class="items-grid"></div>
                 </div>
             </div>
         </div>

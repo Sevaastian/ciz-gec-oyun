@@ -36,7 +36,7 @@ const MAPS = [
         gapMin: 160,
         gapMax: 320,
         speedMult: 1.15,
-        friction: 0.995 // Kaygan zemin
+        friction: 0.995
     },
     {
         id: 3,
@@ -67,64 +67,76 @@ const CARS = [
         desc: "Efsane başlangıç aracı. Hafif ve dengeli."
     },
     {
+        id: "kartal",
+        name: "Tofaş Kartal",
+        price: 1200,
+        speed: 4.4,
+        climbPower: 0.50,
+        moneyBonus: 1.25,
+        inkBonus: 20,
+        color: "#b91c1c",
+        bodyType: "wagon",
+        desc: "Geniş arka bagajı ile ekstra ₺ toplar."
+    },
+    {
+        id: "dolmus",
+        name: "Sarı Dolmuş",
+        price: 5000,
+        speed: 4.8,
+        climbPower: 0.60,
+        moneyBonus: 1.5,
+        inkBonus: 40,
+        color: "#eab308",
+        bodyType: "van",
+        desc: "Dur kalk ustası! Yolcu paraları cebinde."
+    },
+    {
         id: "transit",
         name: "Eski Kasa Kamyonet",
-        price: 1500,
-        speed: 4.5,
-        climbPower: 0.55,
-        moneyBonus: 1.35,
-        inkBonus: 30,
+        price: 12000,
+        speed: 5.2,
+        climbPower: 0.70,
+        moneyBonus: 1.8,
+        inkBonus: 70,
         color: "#3b82f6",
         bodyType: "van",
-        desc: "Geniş kasası sayesinde +%35 daha fazla ₺ taşır."
+        desc: "Güçlü kasa yapısı ve yüksek tırmanma."
     },
     {
         id: "civic",
         name: "Modifiyeli Civic",
-        price: 6000,
-        speed: 5.5,
-        climbPower: 0.65,
-        moneyBonus: 1.6,
-        inkBonus: 50,
+        price: 28000,
+        speed: 5.8,
+        climbPower: 0.75,
+        moneyBonus: 2.2,
+        inkBonus: 100,
         color: "#ef4444",
         bodyType: "sport",
-        desc: "Seri hızlanır, rampalardan çok iyi uçar."
-    },
-    {
-        id: "offroad",
-        name: "4x4 Arazi Canavarı",
-        price: 20000,
-        speed: 5.8,
-        climbPower: 0.90,
-        moneyBonus: 2.0,
-        inkBonus: 80,
-        color: "#10b981",
-        bodyType: "suv",
-        desc: "Dik çizilmiş çizgilere bile tırmanabilen dev tekerlekler."
+        desc: "Rampalardan fırlarken mükemmel takla bonusu."
     },
     {
         id: "togg",
         name: "Togg T10X",
-        price: 65000,
-        speed: 6.8,
+        price: 85000,
+        speed: 7.0,
         climbPower: 0.95,
-        moneyBonus: 2.8,
-        inkBonus: 150,
+        moneyBonus: 3.2,
+        inkBonus: 180,
         color: "#06b6d4",
         bodyType: "suv",
-        desc: "Yüksek tork, ekstra batarya mürekkebi ve 2.8x ₺ kazancı!"
+        desc: "Yüksek tork, dev batarya ve 3.2x ₺ kazancı!"
     },
     {
         id: "hyper",
         name: "Hiper Spor GT",
-        price: 200000,
-        speed: 8.2,
-        climbPower: 1.1,
-        moneyBonus: 4.0,
-        inkBonus: 250,
+        price: 250000,
+        speed: 8.5,
+        climbPower: 1.15,
+        moneyBonus: 4.5,
+        inkBonus: 300,
         color: "#f59e0b",
         bodyType: "sport",
-        desc: "Uçurumların üzerinden süzülen en üst düzey makine."
+        desc: "Uçurumlarda adeta süzülen son nokta makine."
     }
 ];
 
@@ -177,4 +189,10 @@ const UPGRADES = [
         priceMult: 1.6,
         maxLevel: 10
     }
+];
+
+const INITIAL_QUESTS = [
+    { id: "q1", title: "İlk Sürüş", desc: "Toplam 200 metre yol kat et.", target: 200, reward: 500, progress: 0, completed: false },
+    { id: "q2", title: "Köprü Ustası", desc: "10 tane boşluk/uçurum geç.", target: 10, reward: 1200, progress: 0, completed: false },
+    { id: "q3", title: "Hava Akrobasisi", desc: "Toplam 3 kez havada takla at.", target: 3, reward: 2500, progress: 0, completed: false }
 ];

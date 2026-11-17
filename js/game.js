@@ -12,8 +12,13 @@ let saveData = JSON.parse(localStorage.getItem('cizGecTR_save')) || {
         income: 0,
         magnet: 0,
         grip: 0
-    }
+    },
+    quests: INITIAL_QUESTS,
+    lastDailyClaim: 0
 };
+
+// Görev yapısı eksikse tamamla
+if (!saveData.quests) saveData.quests = INITIAL_QUESTS;
 
 function saveGame() {
     localStorage.setItem('cizGecTR_save', JSON.stringify(saveData));
@@ -25,6 +30,8 @@ let currentMap = MAPS[0];
 let cameraX = 0;
 let runDistance = 0;
 let runEarned = 0;
+let totalGapsPassed = 0;
+let totalFlipsCount = 0;
 
 let car = {
     x: 150,
@@ -34,7 +41,9 @@ let car = {
     width: 64,
     height: 28,
     angle: 0,
-    onGround: false
+    onGround: false,
+    cumulativeRotation: 0,
+    lastAirborneAngle: 0
 };
 
 let platforms = [];
@@ -66,6 +75,26 @@ function getCarStats() {
     };
 }
 
+function checkDailyRewardStatus() {
+    const now = Date.now();
+    const oneDay = 24 * 60 * 60 * 1000;
+    const dailyBox = document.getElementById('daily-reward-box');
+    if (now - (saveData.lastDailyClaim || 0) > oneDay) {
+        dailyBox.classList.remove('hidden');
+    } else {
+        dailyBox.classList.add('hidden');
+    }
+}
+
+document.getElementById('btn-claim-daily').onclick = () => {
+    saveData.lastDailyClaim = Date.now();
+    addMoney(1000);
+    SoundFX.playBuy();
+    document.getElementById('daily-reward-box').classList.add('hidden');
+    saveGame();
+    showPopup("🎁 Günlük Ödül: +1.000 ₺ Alındı!");
+};
+
 function initRun() {
     const mapIdx = parseInt(document.getElementById('select-map').value);
     currentMap = MAPS[mapIdx];
@@ -83,7 +112,9 @@ function initRun() {
         width: 64,
         height: 28,
         angle: 0,
-        onGround: false
+        onGround: false,
+        cumulativeRotation: 0,
+        lastAirborneAngle: 0
     };
 
     cameraX = 0;
@@ -209,10 +240,12 @@ function update() {
 
     car.x += car.vx;
     car.y += car.vy;
-    car.onGround = false;
 
+    const wasOnGround = car.onGround;
+    car.onGround = false;
     const wheelRadius = 11;
 
+    // 1. Platform Çarpışması
     for (let p of platforms) {
         if (car.x + 22 > p.x && car.x - 22 < p.x + p.width) {
             const bottomY = car.y + 14 + wheelRadius;
@@ -227,9 +260,12 @@ function update() {
             p.passed = true;
             const bonus = Math.round(25 * stats.finalMoneyMult);
             addMoney(bonus);
+            totalGapsPassed++;
+            updateQuestProgress('q2', 1);
         }
     }
 
+    // 2. Çizilen Çizgilerle Çarpışma
     let highestSurfaceY = null;
     let slopeAngle = 0;
 
@@ -267,9 +303,23 @@ function update() {
             car.vx += Math.sin(slopeAngle) * 0.35;
         }
     } else if (!car.onGround) {
-        car.angle = Math.min(0.45, car.angle + 0.015);
+        car.angle += 0.035; // Havada dönme
+        car.cumulativeRotation += 0.035;
     }
 
+    // Havadan yere iniş takla kontrolü
+    if (!wasOnGround && car.onGround) {
+        if (Math.abs(car.cumulativeRotation) > Math.PI * 1.8) {
+            const flipReward = Math.round(400 * stats.finalMoneyMult);
+            addMoney(flipReward);
+            showPopup(`🤸‍♂️ SÜPER TAKLA! +${flipReward} ₺`);
+            SoundFX.playCoin();
+            updateQuestProgress('q3', 1);
+        }
+        car.cumulativeRotation = 0;
+    }
+
+    // 3. Para Mıknatısı
     for (let c of coins) {
         if (c.collected) continue;
         const dist = Math.hypot(car.x - c.x, car.y - c.y);
@@ -290,6 +340,7 @@ function update() {
         const diff = newDist - runDistance;
         runDistance = newDist;
         addMoney(Math.ceil(diff * 0.5 * stats.finalMoneyMult));
+        updateQuestProgress('q1', diff);
     }
 
     generateWorldAhead();
@@ -305,13 +356,35 @@ function addMoney(amount) {
     runEarned += amount;
 }
 
+function showPopup(text) {
+    const pop = document.getElementById('floating-popup');
+    pop.innerText = text;
+    pop.classList.remove('hidden');
+    setTimeout(() => pop.classList.add('hidden'), 1200);
+}
+
+function updateQuestProgress(qId, amount) {
+    const q = saveData.quests.find(item => item.id === qId);
+    if (q && !q.completed) {
+        q.progress += amount;
+        if (q.progress >= q.target) {
+            q.progress = q.target;
+            q.completed = true;
+            addMoney(q.reward);
+            showPopup(`🏆 GÖREV TAMAMLANDI: +${q.reward} ₺`);
+            SoundFX.playBuy();
+        }
+        saveGame();
+    }
+}
+
 function gameOver() {
     isPlaying = false;
     SoundFX.playCrash();
     saveGame();
 
     document.getElementById('overlay-title').innerText = "ARABA UÇURUMA DÜŞTÜ!";
-    document.getElementById('overlay-desc').innerText = "Garajdan aracını güçlendir veya daha uzun mürekkep tankı al.";
+    document.getElementById('overlay-desc').innerText = "Garajdan motoru güçlendir veya yeni araç al!";
     document.getElementById('run-summary').classList.remove('hidden');
     document.getElementById('btn-summary-garage').classList.remove('hidden');
     document.getElementById('summary-dist').innerText = `${runDistance} m`;
@@ -375,7 +448,6 @@ function draw() {
     }
 
     drawCar();
-
     ctx.restore();
 }
 
@@ -387,7 +459,7 @@ function drawCar() {
 
     ctx.fillStyle = carData.color;
     ctx.beginPath();
-    if (carData.bodyType === "van") {
+    if (carData.bodyType === "van" || carData.bodyType === "wagon") {
         ctx.roundRect(-32, -16, 64, 28, 6);
     } else if (carData.bodyType === "suv") {
         ctx.roundRect(-32, -15, 64, 26, 7);
@@ -431,9 +503,10 @@ function updateHUD() {
 
 function renderGarage() {
     updateHUD();
+    
+    // 1. Arabalar Sekmesi
     const carsGrid = document.getElementById('cars-grid');
     carsGrid.innerHTML = '';
-
     CARS.forEach(c => {
         const owned = saveData.ownedCars.includes(c.id);
         const equipped = saveData.selectedCar === c.id;
@@ -451,14 +524,13 @@ function renderGarage() {
                     </div>
                 </div>
                 <div class="item-desc">${c.desc}</div>
-                <div class="item-stats">Hız: ${c.speed} | Gelir: ${c.moneyBonus}x ₺ | +${c.inkBonus} Mürekkep</div>
+                <div class="item-stats">Hız: ${c.speed} | Gelir: ${c.moneyBonus}x ₺</div>
             </div>
             <button class="action-btn ${equipped ? 'btn-equipped' : (owned ? 'btn-select' : 'btn-buy')}"
                 ${!owned && !canAfford ? 'disabled' : ''}>
                 ${equipped ? 'SEÇİLİ ARAÇ' : (owned ? 'ARACI SEÇ' : `SATIN AL (${c.price.toLocaleString('tr-TR')} ₺)`)}
             </button>
         `;
-
         card.querySelector('button').onclick = () => {
             if (equipped) return;
             if (owned) {
@@ -476,9 +548,9 @@ function renderGarage() {
         carsGrid.appendChild(card);
     });
 
+    // 2. Geliştirmeler Sekmesi
     const upgradesGrid = document.getElementById('upgrades-grid');
     upgradesGrid.innerHTML = '';
-
     UPGRADES.forEach(u => {
         const lvl = saveData.upgrades[u.id] || 0;
         const isMax = lvl >= u.maxLevel;
@@ -496,7 +568,6 @@ function renderGarage() {
                 ${isMax ? 'MAKSİMUM SEVİYE' : `GELİŞTİR (${price.toLocaleString('tr-TR')} ₺)`}
             </button>
         `;
-
         card.querySelector('button').onclick = () => {
             if (!isMax && saveData.money >= price) {
                 saveData.money -= price;
@@ -508,7 +579,62 @@ function renderGarage() {
         };
         upgradesGrid.appendChild(card);
     });
+
+    // 3. Görevler Sekmesi
+    const questsGrid = document.getElementById('quests-grid');
+    questsGrid.innerHTML = '';
+    saveData.quests.forEach(q => {
+        const card = document.createElement('div');
+        card.className = 'item-card';
+        card.innerHTML = `
+            <div>
+                <div class="item-title">${q.title}</div>
+                <div class="item-desc">${q.desc}</div>
+                <div class="item-stats">İlerleme: ${q.progress} / ${q.target}</div>
+            </div>
+            <button class="action-btn ${q.completed ? 'btn-equipped' : 'btn-select'}" disabled>
+                ${q.completed ? 'TAMAMLANDI (+ ' + q.reward.toLocaleString('tr-TR') + ' ₺)' : 'ÖDÜL: ' + q.reward.toLocaleString('tr-TR') + ' ₺'}
+            </button>
+        `;
+        questsGrid.appendChild(card);
+    });
 }
+
+// Gacha (Sürpriz Kutu) Mekaniği
+document.getElementById('btn-open-gacha').onclick = () => {
+    const cost = 1500;
+    const resEl = document.getElementById('gacha-result');
+    if (saveData.money < cost) {
+        resEl.innerText = "Yeterli Türk Liran yok! Biraz daha oyna.";
+        return;
+    }
+    saveData.money -= cost;
+    SoundFX.playBuy();
+
+    const roll = Math.random();
+    if (roll < 0.5) {
+        const cashWin = 2000 + Math.floor(Math.random() * 3000);
+        saveData.money += cashWin;
+        resEl.innerText = `🎉 Şansına Büyük İkramiye Çıktı: +${cashWin.toLocaleString('tr-TR')} ₺!`;
+    } else if (roll < 0.85) {
+        const cashWin = 1000;
+        saveData.money += cashWin;
+        resEl.innerText = `🎁 Teselli İkramiyesi: +${cashWin.toLocaleString('tr-TR')} ₺ kazandın!`;
+    } else {
+        // Rastgele kilitli bir araba açma şansı
+        const lockedCars = CARS.filter(c => !saveData.ownedCars.includes(c.id));
+        if (lockedCars.length > 0) {
+            const luckyCar = lockedCars[Math.floor(Math.random() * lockedCars.length)];
+            saveData.ownedCars.push(luckyCar.id);
+            resEl.innerText = `🌟 MÜTHİŞ! Sandıktan Ücretsiz '${luckyCar.name}' Çıktı!`;
+        } else {
+            saveData.money += 5000;
+            resEl.innerText = `🔥 Tüm arabalar zaten sende! +5.000 ₺ nakit bonus!`;
+        }
+    }
+    saveGame();
+    renderGarage();
+};
 
 document.getElementById('btn-start').onclick = initRun;
 document.getElementById('btn-garage').onclick = openGarage;
@@ -541,5 +667,6 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
+checkDailyRewardStatus();
 updateHUD();
 gameLoop();

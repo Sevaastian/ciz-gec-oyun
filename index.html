@@ -10,11 +10,6 @@
     <div id="game-container">
         <canvas id="gameCanvas"></canvas>
 
-        <!-- Ekrana Tıklayıp Başlama İpucu -->
-        <div id="tap-to-start-banner" class="hidden">
-            EKRANA BAS VE ÇİZMEYE BAŞLA — GAZA BASILIYOR!
-        </div>
-
         <!-- Üst Bilgi Paneli (HUD) -->
         <div id="hud">
             <div class="hud-left">
@@ -51,6 +46,10 @@
                     <p>Kat Edilen Mesafe: <strong id="summary-dist">0 m</strong></p>
                     <p>Kazanılan Para: <strong id="summary-earned" class="text-green">+0 ₺</strong></p>
                 </div>
+                
+                <!-- Oyun Bitti Ekranı İçin Garaj Butonu -->
+                <button id="btn-summary-garage" class="nav-btn hidden" style="width:100%; margin-bottom:12px; background:#f59e0b; color:#111827; padding:12px; border-radius:10px; font-weight:800; cursor:pointer;">🚗 GARAJA GİT & GELİŞTİR</button>
+
                 <div class="map-selector">
                     <label>Bölge Seç:</label>
                     <select id="select-map">
@@ -60,7 +59,7 @@
                         <option value="3">4. Gece Otoyolu (Hızlı - 3.0x ₺)</option>
                     </select>
                 </div>
-                <button id="btn-start" class="primary-btn">HAZIRLA</button>
+                <button id="btn-start" class="primary-btn">GAZA BAS!</button>
             </div>
         </div>
 
